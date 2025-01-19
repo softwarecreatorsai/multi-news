@@ -6,6 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta http-equiv="Content-Security-Policy" content="frame-src *;">
     <title>Multi-News Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -503,6 +504,23 @@
             justify-content: center;
             align-items: center;
             z-index: 10;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .news-panel {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .news-panel.loaded {
+            opacity: 1;
         }
 
         .spinner {
@@ -665,6 +683,136 @@
     </nav>
 
     <script>
+        // Theme management
+        const themeToggles = document.querySelectorAll('.theme-toggle');
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        function updateTheme(dark) {
+            isDarkMode = dark;
+            document.body.dataset.theme = dark ? 'dark' : 'light';
+            localStorage.setItem('darkMode', dark);
+            
+            themeToggles.forEach(toggle => {
+                const icon = toggle.querySelector('i');
+                const text = toggle.querySelector('span');
+                if (icon) icon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
+                if (text) text.textContent = dark ? 'מצב בהיר' : 'מצב כהה';
+            });
+        }
+
+        // Initialize theme from localStorage
+        updateTheme(isDarkMode);
+
+        themeToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                updateTheme(!isDarkMode);
+            });
+        });
+
+        // View management
+        const gridContainer = document.querySelector('.grid-container');
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+        let currentView = localStorage.getItem('currentView') || 'grid';
+
+        function updateView(view) {
+            currentView = view;
+            localStorage.setItem('currentView', view);
+
+            // Update navigation state
+            mobileNavItems.forEach(item => {
+                if (item.dataset.view === view) {
+                    item.classList.add('active');
+                } else if (item.dataset.view) {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update layout
+            if (view === 'grid') {
+                gridContainer.style.display = 'grid';
+                gridContainer.style.gridTemplateColumns = window.innerWidth <= 768 ? '1fr' : 'repeat(2, 1fr)';
+            } else if (view === 'list') {
+                gridContainer.style.display = 'flex';
+                gridContainer.style.flexDirection = 'column';
+                gridContainer.style.gap = '0.75rem';
+            }
+        }
+
+        // Initialize view from localStorage
+        updateView(currentView);
+
+        mobileNavItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = item.dataset.view;
+                
+                if (view && !item.classList.contains('theme-toggle')) {
+                    updateView(view);
+                }
+            });
+        });
+
+        // Panel management
+        document.querySelectorAll('.news-panel').forEach(panel => {
+            const frame = panel.querySelector('iframe');
+            const loadingOverlay = panel.querySelector('.loading-overlay');
+
+            function hideLoading() {
+                loadingOverlay.classList.add('hidden');
+                panel.classList.add('loaded');
+            }
+
+            // Handle iframe load
+            frame.addEventListener('load', hideLoading);
+
+            // Fallback: Hide loading after 10 seconds even if iframe hasn't loaded
+            setTimeout(hideLoading, 10000);
+
+            // Focus mode
+            const focusBtn = panel.querySelector('.focus-btn');
+            focusBtn.addEventListener('click', () => {
+                const isCurrentlyFocused = panel.classList.contains('focused');
+                
+                document.querySelectorAll('.focused').forEach(p => {
+                    p.classList.remove('focused');
+                    p.querySelector('.focus-btn i').className = 'fas fa-expand';
+                });
+
+                if (!isCurrentlyFocused) {
+                    panel.classList.add('focused');
+                    focusBtn.querySelector('i').className = 'fas fa-compress';
+                }
+            });
+
+            // Refresh functionality
+            const refreshBtn = panel.querySelector('.refresh-btn');
+            refreshBtn.addEventListener('click', () => {
+                loadingOverlay.classList.remove('hidden');
+                frame.src = frame.src;
+                
+                const icon = refreshBtn.querySelector('i');
+                icon.style.transition = 'transform 1s';
+                icon.style.transform = 'rotate(360deg)';
+                setTimeout(() => {
+                    icon.style.transition = 'none';
+                    icon.style.transform = 'rotate(0deg)';
+                }, 1000);
+            });
+        });
+
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (currentView === 'grid') {
+                    gridContainer.style.gridTemplateColumns = 
+                        window.innerWidth <= 768 ? '1fr' : 'repeat(2, 1fr)';
+                }
+            }, 250);
+        });
+    </script>
         // Theme toggle functionality
         const themeToggle = document.querySelector('.theme-toggle');
         const themeText = document.querySelector('.theme-text');
