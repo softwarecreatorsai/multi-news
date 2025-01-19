@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Multi-News Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --panel-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --header-height: 4rem;
+            --transition-speed: 0.3s;
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --bottom-nav-height: 4rem;
+        }
+
+        @supports (padding: max(0px)) {
+            :root {
+                --safe-area-bottom: max(var(--safe-area-inset-bottom), 0.5rem);
+            }
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --border-color: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            min-height: 100vh;
+        }
+
+        .header {
+            height: var(--header-height);
+            padding: 0 1.5rem;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow-color);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: linear-gradient(120deg, var(--primary-color), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-ghost:hover {
+            background-color: var(--bg-color);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            padding: 1.5rem;
+            margin-top: var(--header-height);
+            height: calc(100vh - var(--header-height));
+        }
+
+        .news-panel {
+            background: var(--panel-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px var(--shadow-color),
+                        0 2px 4px -2px var(--shadow-color);
+            overflow: hidden;
+            transition: transform var(--transition-speed);
+        }
+
+        .news-panel:hover {
+            transform: translateY(-2px);
+        }
+
+        .panel-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .news-frame {
+            width: 100%;
+            height: calc(100% - 3.5rem);
+            border: none;
+            background-color: var(--panel-bg);
+        }
+
+        .focused {
+            position: fixed;
+            top: calc(var(--header-height) + 1rem);
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 100;
+        }
+
+        /* Mobile Navigation Bar */
+        .mobile-nav {
+            display: none;
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: var(--bottom-nav-height);
+            }
+
+            /* Mobile Navigation */
+            .mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: var(--bottom-nav-height);
+                background-color: var(--panel-bg);
+                border-top: 1px solid var(--border-color);
+                z-index: 1000;
+                padding-bottom: var(--safe-area-bottom);
+                box-shadow: 0 -2px 10px var(--shadow-color);
+            }
+
+            .mobile-nav-items {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                width: 100%;
+                padding: 0 1rem;
+            }
+
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                padding: 0.5rem;
+                color: var(--text-color);
+                text-decoration: none;
+                font-size: 0.75rem;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+            }
+
+            .mobile-nav-item.active {
+                opacity: 1;
+                color: var(--primary-color);
+            }
+
+            .mobile-nav-item i {
+                font-size: 1.25rem;
+            }
+
+            /* Header modifications */
+            .header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                padding: 0.75rem;
+                height: var(--header-height);
+                background-color: var(--panel-bg);
+                z-index: 1000;
+                flex-direction: row;
+                gap: 1rem;
+            }
+
+            .header::after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                left: 0;
+                right: 0;
+                height: 10px;
+                background: linear-gradient(var(--shadow-color), transparent);
+                pointer-events: none;
+            }
+
+            .logo-container {
+                flex: 1;
+            }
+
+            .controls {
+                display: none; /* Hide desktop controls */
+            }
+
+            /* Main content area */
+            .grid-container {
+                margin-top: calc(var(--header-height) + 0.5rem);
+                margin-bottom: calc(var(--bottom-nav-height) + 0.5rem);
+                padding: 0.5rem;
+                gap: 0.5rem;
+                height: auto;
+            }
+
+            .news-panel {
+                height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - 2rem);
+                margin: 0;
+                border-radius: 1rem;
+                overflow: hidden;
+                transform: none !important;
+            }
+
+            .panel-header {
+                padding: 0.75rem;
+                background-color: var(--panel-bg);
+                border-bottom: 1px solid var(--border-color);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+
+            .panel-title {
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            .panel-controls {
+                gap: 0.75rem;
+            }
+
+            .panel-controls .btn {
+                width: 2.5rem;
+                height: 2.5rem;
+                padding: 0;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: var(--bg-color);
+            }
+
+            .panel-controls .btn i {
+                font-size: 1rem;
+            }
+
+            .news-frame {
+                height: calc(100% - 4rem);
+                width: 100%;
+                border: none;
+            }
+
+            /* Focus mode improvements */
+            .focused {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                right: 0;
+                bottom: var(--bottom-nav-height);
+                height: auto;
+                margin: 0;
+                border-radius: 0;
+                z-index: 100;
+            }
+
+            .focused .panel-header {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .focused .btn {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+
+            /* Loading overlay improvements */
+            .loading-overlay {
+                background-color: var(--panel-bg);
+                backdrop-filter: blur(4px);
+            }
+
+            .spinner {
+                width: 2.5rem;
+                height: 2.5rem;
+                border-width: 3px;
+            }
+
+            /* Improve scrolling */
+            .news-frame {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Hide on mobile */
+            .tooltip:hover::after {
+                display: none;
+            }
+            .grid-container {
+                grid-template-columns: 1fr;
+                padding: 0.75rem;
+                gap: 0.75rem;
+                height: auto;
+                margin-bottom: 1rem;
+            }
+
+            .header {
+                padding: 0.75rem;
+                height: auto;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .logo-container {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: space-evenly;
+            }
+
+            .title {
+                font-size: 1.125rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 1rem;
+                min-width: 120px;
+                justify-content: center;
+            }
+
+            .news-panel {
+                height: 80vh;
+                border-radius: 0.75rem;
+            }
+
+            .panel-header {
+                padding: 0.75rem;
+            }
+
+            .panel-controls .btn {
+                padding: 0.5rem;
+                min-width: auto;
+            }
+
+            .panel-title {
+                font-size: 0.875rem;
+            }
+
+            /* Improve touch targets */
+            .btn, .focus-btn, .refresh-btn {
+                min-height: 44px;
+            }
+
+            /* Hide tooltips on mobile */
+            .tooltip:hover::after {
+                display: none;
+            }
+
+            /* Adjust focused panel for mobile */
+            .focused {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: 0;
+                z-index: 2000;
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .focused .panel-header {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .focused .btn-ghost {
+                color: white;
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+
+            /* Show text labels for important buttons on mobile */
+            .btn span {
+                display: inline-block;
+            }
+
+            /* Improve scrolling */
+            .news-frame {
+                -webkit-overflow-scrolling: touch;
+                height: calc(100% - 3rem);
+            }
+        }
+
+        /* Loading animation */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--panel-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem;
+            background-color: var(--text-color);
+            color: var(--panel-bg);
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <i class="fas fa-newspaper logo"></i>
+            <h1 class="title">מערכת חדשות מרובת ערוצים</h1>
+        </div>
+        <div class="controls">
+            <button class="btn btn-ghost theme-toggle tooltip" data-tooltip="החלף מצב תצוגה">
+                <i class="fas fa-moon"></i>
+                <span class="theme-text">מצב כהה</span>
+            </button>
+            <button class="btn btn-primary layout-toggle tooltip" data-tooltip="שנה פריסת תצוגה">
+                <i class="fas fa-th-large"></i>
+                <span>פריסה</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="grid-container">
+        <div class="news-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-globe"></i>
+                    Ynet
+                </div>
+                <div class="panel-controls">
+                    <button class="btn btn-ghost focus-btn tooltip" data-tooltip="הגדל/הקטן">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="btn btn-ghost refresh-btn tooltip" data-tooltip="רענן">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <iframe class="news-frame" src="https://www.ynet.co.il/news/category/184"></iframe>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="news-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-tv"></i>
+                    חדשות 14
+                </div>
+                <div class="panel-controls">
+                    <button class="btn btn-ghost focus-btn tooltip" data-tooltip="הגדל/הקטן">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="btn btn-ghost refresh-btn tooltip" data-tooltip="רענן">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <iframe class="news-frame" src="https://www.now14.co.il/news-flash"></iframe>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="news-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-globe"></i>
+                    חדשות וואלה!
+                </div>
+                <div class="panel-controls">
+                    <button class="btn btn-ghost focus-btn tooltip" data-tooltip="הגדל/הקטן">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="btn btn-ghost refresh-btn tooltip" data-tooltip="רענן">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <iframe class="news-frame" src="https://news.walla.co.il/breaking"></iframe>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="news-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-newspaper"></i>
+                    0404
+                </div>
+                <div class="panel-controls">
+                    <button class="btn btn-ghost focus-btn tooltip" data-tooltip="הגדל/הקטן">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="btn btn-ghost refresh-btn tooltip" data-tooltip="רענן">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <iframe class="news-frame" src="https://www.0404.co.il/?cat=14"></iframe>
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="#" class="mobile-nav-item active" data-view="grid">
+                <i class="fas fa-th-large"></i>
+                <span>תצוגת רשת</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="list">
+                <i class="fas fa-list"></i>
+                <span>תצוגת רשימה</span>
+            </a>
+            <a href="#" class="mobile-nav-item theme-toggle">
+                <i class="fas fa-moon"></i>
+                <span>מצב כהה</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="settings">
+                <i class="fas fa-cog"></i>
+                <span>הגדרות</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.querySelector('.theme-toggle');
+        const themeText = document.querySelector('.theme-text');
+        const themeIcon = themeToggle.querySelector('i');
+
+        function updateThemeUI(isDark) {
+            themeText.textContent = isDark ? 'מצב בהיר' : 'מצב כהה';
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.dataset.theme === 'dark';
+            document.body.dataset.theme = isDark ? 'light' : 'dark';
+            updateThemeUI(!isDark);
+        });
+
+        // Initialize grid container
+        const gridContainer = document.querySelector('.grid-container');
+        const layoutToggle = document.querySelector('.layout-toggle');
+        let isCompact = false;
+
+        if (layoutToggle) {
+            layoutToggle.addEventListener('click', () => {
+                isCompact = !isCompact;
+                gridContainer.style.gridTemplateColumns = isCompact ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)';
+                layoutToggle.querySelector('i').className = isCompact ? 'fas fa-th' : 'fas fa-th-large';
+            });
+        }
+
+        // Refresh button functionality
+        document.querySelectorAll('.refresh-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const panel = button.closest('.news-panel');
+                const frame = panel.querySelector('iframe');
+                const loadingOverlay = panel.querySelector('.loading-overlay');
+                
+                loadingOverlay.style.display = 'flex';
+                frame.src = frame.src;
+                
+                frame.onload = () => {
+                    loadingOverlay.style.display = 'none';
+                };
+
+                // Rotate refresh icon
+                const icon = button.querySelector('i');
+                icon.style.transition = 'transform 1s';
+                icon.style.transform = 'rotate(360deg)';
+                setTimeout(() => {
+                    icon.style.transition = 'none';
+                    icon.style.transform = 'rotate(0deg)';
+                }, 1000);
+            });
+        });
+
+        // Focus mode functionality
+        document.querySelectorAll('.focus-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const panel = button.closest('.news-panel');
+                const icon = button.querySelector('i');
+                
+                if (panel.classList.contains('focused')) {
+                    panel.classList.remove('focused');
+                    icon.className = 'fas fa-expand';
+                } else {
+                    document.querySelectorAll('.focused').forEach(p => {
+                        p.classList.remove('focused');
+                        p.querySelector('.focus-btn i').className = 'fas fa-expand';
+                    });
+                    panel.classList.add('focused');
+                    icon.className = 'fas fa-compress';
+                }
+            });
+        });
+
+        // Handle iframe loading
+        document.querySelectorAll('iframe').forEach(frame => {
+            frame.onload = () => {
+                frame.closest('.news-panel').querySelector('.loading-overlay').style.display = 'none';
+            };
+        });
+
+        // Initialize tooltips for dynamic content
+        function initializeTooltips() {
+            document.querySelectorAll('.tooltip').forEach(element => {
+                element.addEventListener('mouseenter', (e) => {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip-content';
+                    tooltip.textContent = element.dataset.tooltip;
+                    element.appendChild(tooltip);
+                });
+
+                element.addEventListener('mouseleave', (e) => {
+                    const tooltip = element.querySelector('.tooltip-content');
+                    if (tooltip) {
+                        tooltip.remove();
+                    }
+                });
+            });
+        }
+
+        // Mobile navigation handling
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+
+        mobileNavItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Remove active class from all items
+                mobileNavItems.forEach(navItem => navItem.classList.remove('active'));
+                
+                // Add active class to clicked item
+                item.classList.add('active');
+                
+                // Handle different views
+                const view = item.dataset.view;
+                switch(view) {
+                    case 'grid':
+                        gridContainer.style.display = 'grid';
+                        gridContainer.style.gridTemplateColumns = '1fr';
+                        break;
+                    case 'list':
+                        gridContainer.style.display = 'flex';
+                        gridContainer.style.flexDirection = 'column';
+                        break;
+                    case 'settings':
+                        // Implement settings panel if needed
+                        break;
+                }
+            });
+        });
+
+        // Handle scroll behavior
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            const header = document.querySelector('.header');
+            const mobileNav = document.querySelector('.mobile-nav');
+            
+            // Scrolling down
+            if (currentScroll > lastScroll && currentScroll > 50) {
+                header.style.transform = 'translateY(-100%)';
+                mobileNav.style.transform = 'translateY(100%)';
+            }
+            // Scrolling up
+            else {
+                header.style.transform = 'translateY(0)';
+                mobileNav.style.transform = 'translateY(0)';
+            }
+            
+            lastScroll = currentScroll;
+        });
+
+        // Add active state to buttons on touch
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('touchstart', () => {
+                button.style.transform = 'scale(0.95)';
+            });
+            
+            button.addEventListener('touchend', () => {
+                button.style.transform = 'scale(1)';
+            });
+        });
+
+        // Initialize tooltips on load
+        initializeTooltips();
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Alt + D to toggle dark mode
+            if (e.altKey && e.key === 'd') {
+                themeToggle.click();
+            }
+            // Alt + L to toggle layout
+            if (e.altKey && e.key === 'l') {
+                layoutToggle.click();
+            }
+        });
+
+        // Add smooth transitions when switching panels
+        document.querySelectorAll('.news-panel').forEach(panel => {
+            panel.addEventListener('transitionend', (e) => {
+                if (e.propertyName === 'transform') {
+                    panel.style.transition = 'all var(--transition-speed)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
