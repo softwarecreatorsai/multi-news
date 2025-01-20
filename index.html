@@ -25,6 +25,12 @@
             --bottom-nav-height: 4rem;
         }
 
+        @supports (padding: max(0px)) {
+            :root {
+                --safe-area-bottom: max(var(--safe-area-inset-bottom), 0.5rem);
+            }
+        }
+
         [data-theme="dark"] {
             --bg-color: #0f172a;
             --panel-bg: #1e293b;
@@ -127,21 +133,17 @@
             padding: 1.5rem;
             margin-top: var(--header-height);
             height: calc(100vh - var(--header-height));
+            transition: all var(--transition-speed); /* Add transition for layout change */
         }
 
         .news-panel {
-            position: relative;
             background: var(--panel-bg);
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px var(--shadow-color),
                         0 2px 4px -2px var(--shadow-color);
             overflow: hidden;
-            transition: transform var(--transition-speed);
-            opacity: 0;
-        }
-
-        .news-panel.loaded {
-            opacity: 1;
+            transition: transform var(--transition-speed), all var(--transition-speed); /* Add transition for focus */
+            position: relative; /* Ensure stacking context for z-index */
         }
 
         .news-panel:hover {
@@ -177,110 +179,64 @@
             background-color: var(--panel-bg);
         }
 
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--panel-bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .spinner {
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Grid vs List View Styles */
-        .grid-container[data-view="grid"] {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.75rem;
-        }
-
-        .grid-container[data-view="list"] {
+        .focused {
+            position: fixed;
+            top: calc(var(--header-height) + 0.5rem); /* Adjust top to account for potential margin */
+            left: 0.5rem; /* Adjust left */
+            right: 0.5rem; /* Adjust right */
+            bottom: 0.5rem; /* Adjust bottom */
+            z-index: 1001; /* Ensure it's above the header */
+            border-radius: 0.75rem; /* Add border-radius for smoother transition */
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .grid-container[data-view="list"] .news-panel {
-            height: 80vh;
-        }
-
-        /* Focus Mode Improvements */
-        .focused {
-            position: fixed !important;
-            top: var(--header-height) !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: var(--bottom-nav-height) !important;
-            height: auto !important;
-            width: 100% !important;
-            margin: 0 !important;
-            z-index: 2000 !important;
-            border-radius: 0 !important;
-            transform: none !important;
+            height: auto !important; /* Override height restriction */
         }
 
         .focused .panel-header {
-            background-color: var(--primary-color) !important;
-            color: white !important;
+            background-color: var(--primary-color);
+            color: white;
+            position: relative; /* Create stacking context for controls */
         }
 
         .focused .btn-ghost {
-            color: white !important;
-            border-color: rgba(255, 255, 255, 0.3) !important;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .focused .news-frame {
-            height: calc(100% - 3.5rem) !important;
+            height: calc(100% - 3rem); /* Adjust height for focused state */
         }
 
-        /* Mobile Styles */
+        /* Mobile Navigation Bar */
+        .mobile-nav {
+            display: none;
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
         @media (max-width: 768px) {
             body {
                 padding-bottom: var(--bottom-nav-height);
             }
 
-            .header {
-                padding: 0.75rem;
-                height: var(--header-height);
-            }
-
-            .controls {
-                display: none;
-            }
-
-            .title {
-                font-size: 1.125rem;
-            }
-
-            .grid-container {
-                margin-top: var(--header-height);
-                padding: 0.75rem;
-                gap: 0.75rem;
-            }
-
+            /* Mobile Navigation */
             .mobile-nav {
                 display: flex;
                 position: fixed;
@@ -319,35 +275,309 @@
             .mobile-nav-item.active {
                 opacity: 1;
                 color: var(--primary-color);
-                position: relative;
             }
 
             .mobile-nav-item i {
                 font-size: 1.25rem;
             }
 
-            .mobile-nav-item.active::after {
-                content: '';
-                position: absolute;
-                bottom: -0.5rem;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 1.5rem;
-                height: 3px;
-                background-color: var(--primary-color);
-                border-radius: 1.5px;
+            /* Header modifications */
+            .header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                padding: 0.75rem;
+                height: auto;
+                background-color: var(--panel-bg);
+                z-index: 1000;
+                flex-direction: row;
+                gap: 0.5rem; /* Reduced gap */
             }
 
-            .btn {
-                padding: 0.6rem 1rem;
-                font-size: 1rem;
-                min-width: 44px;
-                justify-content: center;
+            .header::after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                left: 0;
+                right: 0;
+                height: 10px;
+                background: linear-gradient(var(--shadow-color), transparent);
+                pointer-events: none;
+            }
+
+            .logo-container {
+                flex: 1;
+            }
+
+            .controls {
+                display: none; /* Hide desktop controls */
+            }
+
+            /* Main content area */
+            .grid-container {
+                margin-top: calc(var(--header-height) + 0.5rem);
+                margin-bottom: calc(var(--bottom-nav-height) + 0.5rem);
+                padding: 0.5rem;
+                gap: 0.5rem;
+                height: auto;
             }
 
             .news-panel {
-                height: 80vh;
+                height: auto; /* Allow flexible height on mobile */
+                margin: 0;
+                border-radius: 0.75rem;
+                overflow: hidden;
+                transform: none !important;
             }
+
+            .panel-header {
+                padding: 0.75rem;
+                background-color: var(--panel-bg);
+                border-bottom: 1px solid var(--border-color);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+
+            .panel-title {
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            .panel-controls {
+                gap: 0.5rem;
+            }
+
+            .panel-controls .btn {
+                width: 2.25rem;
+                height: 2.25rem;
+                padding: 0;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: var(--bg-color);
+            }
+
+            .panel-controls .btn i {
+                font-size: 1rem;
+            }
+
+            .news-frame {
+                height: calc(100vh - var(--header-height) - 3.5rem); /* Adjust frame height for mobile */
+                width: 100%;
+                border: none;
+            }
+
+            /* Focus mode improvements */
+            .focused {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: var(--bottom-nav-height);
+                height: auto;
+                margin: 0;
+                border-radius: 0;
+                z-index: 1001;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .focused .panel-header {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .focused .btn {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+
+            .focused .news-frame {
+                height: calc(100vh - var(--bottom-nav-height) - 3rem);
+            }
+
+            /* Loading overlay improvements */
+            .loading-overlay {
+                background-color: var(--panel-bg);
+                backdrop-filter: blur(4px);
+            }
+
+            .spinner {
+                width: 2.5rem;
+                height: 2.5rem;
+                border-width: 3px;
+            }
+
+            /* Improve scrolling */
+            .news-frame {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Hide on mobile */
+            .tooltip:hover::after {
+                display: none;
+            }
+            .grid-container {
+                grid-template-columns: 1fr;
+                padding: 0.5rem; /* Reduced padding */
+                gap: 0.5rem; /* Reduced gap */
+                height: auto;
+                margin-bottom: 0.5rem; /* Reduced margin */
+                display: flex; /* Default to list view on mobile */
+                flex-direction: column;
+            }
+
+            .header {
+                padding: 0.5rem; /* Reduced padding */
+                height: auto;
+                flex-direction: row; /* Keep header horizontal on mobile */
+                align-items: center; /* Align items in header */
+                justify-content: space-between; /* Distribute items in header */
+                gap: 0.5rem;
+            }
+
+            .logo-container {
+                width: auto; /* Adjust width for logo */
+                justify-content: flex-start; /* Align logo to the start */
+            }
+
+            .controls {
+                display: none; /* Keep controls hidden on mobile */
+            }
+
+            .title {
+                font-size: 1rem; /* Reduced title size */
+            }
+
+            .news-panel {
+                height: auto; /* Allow flexible height */
+                border-radius: 0.5rem; /* Reduced border-radius */
+            }
+
+            .panel-header {
+                padding: 0.5rem; /* Reduced padding */
+            }
+
+            .panel-controls .btn {
+                padding: 0.4rem; /* Reduced padding */
+                min-width: auto;
+            }
+
+            .panel-title {
+                font-size: 0.8rem; /* Reduced title size */
+            }
+
+            /* Improve touch targets */
+            .btn, .focus-btn, .refresh-btn {
+                min-height: 44px;
+            }
+
+            /* Hide tooltips on mobile */
+            .tooltip:hover::after {
+                display: none;
+            }
+
+            /* Adjust focused panel for mobile */
+            .focused {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: 0;
+                z-index: 2000;
+                height: auto; /* Allow flexible height */
+                border-radius: 0;
+                flex-direction: column;
+            }
+
+            .focused .panel-header {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .focused .btn-ghost {
+                color: white;
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+
+            /* Show text labels for important buttons on mobile */
+            .btn span {
+                display: none; /* Hide text on mobile */
+            }
+
+            /* Improve scrolling */
+            .news-frame {
+                -webkit-overflow-scrolling: touch;
+                height: calc(100% - 3rem);
+            }
+        }
+
+        /* Loading animation */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--panel-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .news-panel {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .news-panel.loaded {
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem;
+            background-color: var(--text-color);
+            color: var(--panel-bg);
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -506,15 +736,13 @@
 
         // View management
         const gridContainer = document.querySelector('.grid-container');
+        const layoutToggleBtn = document.querySelector('.layout-toggle');
         const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
         let currentView = localStorage.getItem('currentView') || 'grid';
 
         function updateView(view) {
             currentView = view;
             localStorage.setItem('currentView', view);
-
-            // Remove old view attribute and add new one
-            gridContainer.setAttribute('data-view', view);
 
             // Update navigation state
             mobileNavItems.forEach(item => {
@@ -525,19 +753,38 @@
                 }
             });
 
-            // Update all panels
-            document.querySelectorAll('.news-panel').forEach(panel => {
-                // Reset any focused panels when changing views
-                panel.classList.remove('focused');
-                const focusBtn = panel.querySelector('.focus-btn i');
-                if (focusBtn) {
-                    focusBtn.className = 'fas fa-expand';
+            // Update layout
+            if (view === 'grid') {
+                gridContainer.style.display = 'grid';
+                if (window.innerWidth <= 768) {
+                    gridContainer.style.gridTemplateColumns = '1fr';
+                } else {
+                    gridContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
                 }
-            });
+                gridContainer.style.flexDirection = 'row'; // Reset flex-direction
+            } else if (view === 'list') {
+                gridContainer.style.display = 'flex';
+                gridContainer.style.flexDirection = 'column';
+                gridContainer.style.gridTemplateColumns = '1fr'; // Ensure single column
+                gridContainer.style.gap = '0.75rem';
+            }
+
+            // Update layout toggle button icon
+            const layoutIcon = layoutToggleBtn.querySelector('i');
+            if (view === 'grid') {
+                layoutIcon.className = 'fas fa-th-large';
+            } else {
+                layoutIcon.className = 'fas fa-list';
+            }
         }
 
         // Initialize view from localStorage
         updateView(currentView);
+
+        layoutToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            updateView(currentView === 'grid' ? 'list' : 'grid');
+        });
 
         mobileNavItems.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -554,6 +801,7 @@
         document.querySelectorAll('.news-panel').forEach(panel => {
             const frame = panel.querySelector('iframe');
             const loadingOverlay = panel.querySelector('.loading-overlay');
+            const focusBtn = panel.querySelector('.focus-btn');
 
             function hideLoading() {
                 loadingOverlay.classList.add('hidden');
@@ -567,29 +815,18 @@
             setTimeout(hideLoading, 10000);
 
             // Focus mode
-            const focusBtn = panel.querySelector('.focus-btn');
-            if (focusBtn) {
-                focusBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const isCurrentlyFocused = panel.classList.contains('focused');
+            focusBtn.addEventListener('click', () => {
+                panel.classList.toggle('focused');
+                const icon = focusBtn.querySelector('i');
+                icon.className = panel.classList.contains('focused') ? 'fas fa-compress' : 'fas fa-expand';
 
-                    // Remove focus from all panels first
-                    document.querySelectorAll('.news-panel').forEach(p => {
-                        p.classList.remove('focused');
-                        const btn = p.querySelector('.focus-btn i');
-                        if (btn) btn.className = 'fas fa-expand';
-                    });
-
-                    // Toggle focus for current panel
-                    if (!isCurrentlyFocused) {
-                        panel.classList.add('focused');
-                        focusBtn.querySelector('i').className = 'fas fa-compress';
-
-                        // Ensure the focused panel is visible
-                        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Bring focused panel to the front and others to the back
+                document.querySelectorAll('.news-panel').forEach(otherPanel => {
+                    if (otherPanel !== panel) {
+                        otherPanel.style.zIndex = panel.classList.contains('focused') ? 99 : 'auto';
                     }
                 });
-            }
+            });
 
             // Refresh functionality
             const refreshBtn = panel.querySelector('.refresh-btn');
