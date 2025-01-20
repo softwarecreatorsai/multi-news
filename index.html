@@ -25,12 +25,6 @@
             --bottom-nav-height: 4rem;
         }
 
-        @supports (padding: max(0px)) {
-            :root {
-                --safe-area-bottom: max(var(--safe-area-inset-bottom), 0.5rem);
-            }
-        }
-
         [data-theme="dark"] {
             --bg-color: #0f172a;
             --panel-bg: #1e293b;
@@ -136,12 +130,18 @@
         }
 
         .news-panel {
+            position: relative;
             background: var(--panel-bg);
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px var(--shadow-color),
                         0 2px 4px -2px var(--shadow-color);
             overflow: hidden;
             transition: transform var(--transition-speed);
+            opacity: 0;
+        }
+
+        .news-panel.loaded {
+            opacity: 1;
         }
 
         .news-panel:hover {
@@ -177,45 +177,110 @@
             background-color: var(--panel-bg);
         }
 
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--panel-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Grid vs List View Styles */
+        .grid-container[data-view="grid"] {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .grid-container[data-view="list"] {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .grid-container[data-view="list"] .news-panel {
+            height: 80vh;
+        }
+
+        /* Focus Mode Improvements */
         .focused {
-            position: fixed;
-            top: calc(var(--header-height) + 1rem);
-            left: 1rem;
-            right: 1rem;
-            bottom: 1rem;
-            z-index: 100;
+            position: fixed !important;
+            top: var(--header-height) !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: var(--bottom-nav-height) !important;
+            height: auto !important;
+            width: 100% !important;
+            margin: 0 !important;
+            z-index: 2000 !important;
+            border-radius: 0 !important;
+            transform: none !important;
         }
 
-        /* Mobile Navigation Bar */
-        .mobile-nav {
-            display: none;
+        .focused .panel-header {
+            background-color: var(--primary-color) !important;
+            color: white !important;
         }
 
-        /* Custom scrollbar for webkit browsers */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .focused .btn-ghost {
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
         }
 
-        ::-webkit-scrollbar-track {
-            background: var(--bg-color);
+        .focused .news-frame {
+            height: calc(100% - 3.5rem) !important;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-color);
-        }
-
+        /* Mobile Styles */
         @media (max-width: 768px) {
             body {
                 padding-bottom: var(--bottom-nav-height);
             }
 
-            /* Mobile Navigation */
+            .header {
+                padding: 0.75rem;
+                height: var(--header-height);
+            }
+
+            .controls {
+                display: none;
+            }
+
+            .title {
+                font-size: 1.125rem;
+            }
+
+            .grid-container {
+                margin-top: var(--header-height);
+                padding: 0.75rem;
+                gap: 0.75rem;
+            }
+
             .mobile-nav {
                 display: flex;
                 position: fixed;
@@ -254,306 +319,35 @@
             .mobile-nav-item.active {
                 opacity: 1;
                 color: var(--primary-color);
+                position: relative;
             }
 
             .mobile-nav-item i {
                 font-size: 1.25rem;
             }
 
-            /* Header modifications */
-            .header {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                padding: 0.75rem;
-                height: var(--header-height);
-                background-color: var(--panel-bg);
-                z-index: 1000;
-                flex-direction: row;
-                gap: 1rem;
-            }
-
-            .header::after {
+            .mobile-nav-item.active::after {
                 content: '';
                 position: absolute;
-                bottom: -10px;
-                left: 0;
-                right: 0;
-                height: 10px;
-                background: linear-gradient(var(--shadow-color), transparent);
-                pointer-events: none;
-            }
-
-            .logo-container {
-                flex: 1;
-            }
-
-            .controls {
-                display: none; /* Hide desktop controls */
-            }
-
-            /* Main content area */
-            .grid-container {
-                margin-top: calc(var(--header-height) + 0.5rem);
-                margin-bottom: calc(var(--bottom-nav-height) + 0.5rem);
-                padding: 0.5rem;
-                gap: 0.5rem;
-                height: auto;
-            }
-
-            .news-panel {
-                height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - 2rem);
-                margin: 0;
-                border-radius: 1rem;
-                overflow: hidden;
-                transform: none !important;
-            }
-
-            .panel-header {
-                padding: 0.75rem;
-                background-color: var(--panel-bg);
-                border-bottom: 1px solid var(--border-color);
-                position: sticky;
-                top: 0;
-                z-index: 10;
-            }
-
-            .panel-title {
-                font-size: 1rem;
-                font-weight: 600;
-            }
-
-            .panel-controls {
-                gap: 0.75rem;
-            }
-
-            .panel-controls .btn {
-                width: 2.5rem;
-                height: 2.5rem;
-                padding: 0;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background-color: var(--bg-color);
-            }
-
-            .panel-controls .btn i {
-                font-size: 1rem;
-            }
-
-            .news-frame {
-                height: calc(100% - 4rem);
-                width: 100%;
-                border: none;
-            }
-
-            /* Focus mode improvements */
-            .focused {
-                position: fixed;
-                top: var(--header-height);
-                left: 0;
-                right: 0;
-                bottom: var(--bottom-nav-height);
-                height: auto;
-                margin: 0;
-                border-radius: 0;
-                z-index: 100;
-            }
-
-            .focused .panel-header {
+                bottom: -0.5rem;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 1.5rem;
+                height: 3px;
                 background-color: var(--primary-color);
-                color: white;
-            }
-
-            .focused .btn {
-                background-color: rgba(255, 255, 255, 0.2);
-                color: white;
-            }
-
-            /* Loading overlay improvements */
-            .loading-overlay {
-                background-color: var(--panel-bg);
-                backdrop-filter: blur(4px);
-            }
-
-            .spinner {
-                width: 2.5rem;
-                height: 2.5rem;
-                border-width: 3px;
-            }
-
-            /* Improve scrolling */
-            .news-frame {
-                -webkit-overflow-scrolling: touch;
-            }
-
-            /* Hide on mobile */
-            .tooltip:hover::after {
-                display: none;
-            }
-            .grid-container {
-                grid-template-columns: 1fr;
-                padding: 0.75rem;
-                gap: 0.75rem;
-                height: auto;
-                margin-bottom: 1rem;
-            }
-
-            .header {
-                padding: 0.75rem;
-                height: auto;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-
-            .logo-container {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .controls {
-                width: 100%;
-                justify-content: space-evenly;
-            }
-
-            .title {
-                font-size: 1.125rem;
+                border-radius: 1.5px;
             }
 
             .btn {
                 padding: 0.6rem 1rem;
                 font-size: 1rem;
-                min-width: 120px;
+                min-width: 44px;
                 justify-content: center;
             }
 
             .news-panel {
                 height: 80vh;
-                border-radius: 0.75rem;
             }
-
-            .panel-header {
-                padding: 0.75rem;
-            }
-
-            .panel-controls .btn {
-                padding: 0.5rem;
-                min-width: auto;
-            }
-
-            .panel-title {
-                font-size: 0.875rem;
-            }
-
-            /* Improve touch targets */
-            .btn, .focus-btn, .refresh-btn {
-                min-height: 44px;
-            }
-
-            /* Hide tooltips on mobile */
-            .tooltip:hover::after {
-                display: none;
-            }
-
-            /* Adjust focused panel for mobile */
-            .focused {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                margin: 0;
-                z-index: 2000;
-                height: 100vh;
-                border-radius: 0;
-            }
-
-            .focused .panel-header {
-                background-color: var(--primary-color);
-                color: white;
-            }
-
-            .focused .btn-ghost {
-                color: white;
-                border-color: rgba(255, 255, 255, 0.3);
-            }
-
-            /* Show text labels for important buttons on mobile */
-            .btn span {
-                display: inline-block;
-            }
-
-            /* Improve scrolling */
-            .news-frame {
-                -webkit-overflow-scrolling: touch;
-                height: calc(100% - 3rem);
-            }
-        }
-
-        /* Loading animation */
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--panel-bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .news-panel {
-            position: relative;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .news-panel.loaded {
-            opacity: 1;
-        }
-
-        .spinner {
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Tooltip */
-        .tooltip {
-            position: relative;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.5rem;
-            background-color: var(--text-color);
-            color: var(--panel-bg);
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            z-index: 1000;
         }
     </style>
 </head>
@@ -691,7 +485,7 @@
             isDarkMode = dark;
             document.body.dataset.theme = dark ? 'dark' : 'light';
             localStorage.setItem('darkMode', dark);
-            
+
             themeToggles.forEach(toggle => {
                 const icon = toggle.querySelector('i');
                 const text = toggle.querySelector('span');
@@ -719,6 +513,9 @@
             currentView = view;
             localStorage.setItem('currentView', view);
 
+            // Remove old view attribute and add new one
+            gridContainer.setAttribute('data-view', view);
+
             // Update navigation state
             mobileNavItems.forEach(item => {
                 if (item.dataset.view === view) {
@@ -728,15 +525,15 @@
                 }
             });
 
-            // Update layout
-            if (view === 'grid') {
-                gridContainer.style.display = 'grid';
-                gridContainer.style.gridTemplateColumns = window.innerWidth <= 768 ? '1fr' : 'repeat(2, 1fr)';
-            } else if (view === 'list') {
-                gridContainer.style.display = 'flex';
-                gridContainer.style.flexDirection = 'column';
-                gridContainer.style.gap = '0.75rem';
-            }
+            // Update all panels
+            document.querySelectorAll('.news-panel').forEach(panel => {
+                // Reset any focused panels when changing views
+                panel.classList.remove('focused');
+                const focusBtn = panel.querySelector('.focus-btn i');
+                if (focusBtn) {
+                    focusBtn.className = 'fas fa-expand';
+                }
+            });
         }
 
         // Initialize view from localStorage
@@ -746,7 +543,7 @@
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const view = item.dataset.view;
-                
+
                 if (view && !item.classList.contains('theme-toggle')) {
                     updateView(view);
                 }
@@ -771,26 +568,35 @@
 
             // Focus mode
             const focusBtn = panel.querySelector('.focus-btn');
-            focusBtn.addEventListener('click', () => {
-                const isCurrentlyFocused = panel.classList.contains('focused');
-                
-                document.querySelectorAll('.focused').forEach(p => {
-                    p.classList.remove('focused');
-                    p.querySelector('.focus-btn i').className = 'fas fa-expand';
-                });
+            if (focusBtn) {
+                focusBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const isCurrentlyFocused = panel.classList.contains('focused');
 
-                if (!isCurrentlyFocused) {
-                    panel.classList.add('focused');
-                    focusBtn.querySelector('i').className = 'fas fa-compress';
-                }
-            });
+                    // Remove focus from all panels first
+                    document.querySelectorAll('.news-panel').forEach(p => {
+                        p.classList.remove('focused');
+                        const btn = p.querySelector('.focus-btn i');
+                        if (btn) btn.className = 'fas fa-expand';
+                    });
+
+                    // Toggle focus for current panel
+                    if (!isCurrentlyFocused) {
+                        panel.classList.add('focused');
+                        focusBtn.querySelector('i').className = 'fas fa-compress';
+
+                        // Ensure the focused panel is visible
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            }
 
             // Refresh functionality
             const refreshBtn = panel.querySelector('.refresh-btn');
             refreshBtn.addEventListener('click', () => {
                 loadingOverlay.classList.remove('hidden');
                 frame.src = frame.src;
-                
+
                 const icon = refreshBtn.querySelector('i');
                 icon.style.transition = 'transform 1s';
                 icon.style.transform = 'rotate(360deg)';
@@ -807,8 +613,11 @@
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
                 if (currentView === 'grid') {
-                    gridContainer.style.gridTemplateColumns = 
-                        window.innerWidth <= 768 ? '1fr' : 'repeat(2, 1fr)';
+                    if (window.innerWidth <= 768) {
+                        gridContainer.style.gridTemplateColumns = '1fr';
+                    } else {
+                        gridContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                    }
                 }
             }, 250);
         });
